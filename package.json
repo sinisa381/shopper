@@ -14,10 +14,7 @@
     "express": "^4.17.1",
     "express-formidable": "^1.2.0",
     "jsonwebtoken": "^8.5.1",
-    "mongoose": "^5.6.4",
-    "typeface-eb-garamond": "^0.0.72",
-    "typeface-forum": "^0.0.72",
-    "typeface-titillium-web": "^0.0.72"
+    "mongoose": "^5.6.4"
   },
   "scripts": {
     "start": "node server/server.js",
