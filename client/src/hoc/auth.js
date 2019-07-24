@@ -1,63 +1,48 @@
 import React, { useEffect, useContext } from 'react'
-// import { Flex } from 'rebass'
+import { userSelector } from './selectors'
+import { createStructuredSelector } from 'reselect'
 import { connect } from 'react-redux'
-import { auth } from '../actions/user_actions'
-// import CircularProgress from '@material-ui/core/CircularProgress'
-import { makeStyles } from '@material-ui/core/styles'
-import { LoadingContext } from '../context'
-
-const useStyles = makeStyles(theme => ({
-	progress: {
-		margin: 20
-	}
-}))
+import { auth } from '../redux/user/actions'
+import { LoadingContext } from '../context/loading-header'
 
 export default function(ComposedComponent, reload, adminRoute = null) {
-	const Auth = props => {
-		// const classes = useStyles()
-		const { setLoading, loading } = useContext(LoadingContext)
+  const Auth = props => {
+    const { setLoading, loading } = useContext(LoadingContext)
+    useEffect(() => {
+      const userData = async () => {
+        try {
+          props.dispatch(auth()).then(response => {
+            setLoading(false)
+            if (!response.payload.isAuth) {
+              if (reload) {
+                props.history.push('/register_login')
+              }
+            } else {
+              if (adminRoute && !response.payload.isAdmin) {
+                props.history.push('/user/dashboard')
+              } else {
+                if (reload === false) {
+                  props.history.push('/user/dashboard')
+                }
+              }
+            }
+          })
+        } catch (e) {
+          setLoading(false)
+          throw e
+        }
+      }
+      userData()
+    }, [])
 
-		useEffect(() => {
-			props.dispatch(auth()).then(res => {
-				setLoading(false)
-				if (!res.payload.isAuth) {
-					if (reload) {
-						props.history.push('/register_login')
-					}
-				} else {
-					if (adminRoute && !res.payload.isAdmin) {
-						props.history.push('/user/dashboard')
-					} else {
-						if (reload === false) {
-							props.history.push('/user/dashboard')
-						}
-					}
-				}
+    if (loading) return null
 
-				setLoading(false)
-			})
-		}, [])
+    return <ComposedComponent {...props} user={props.user} />
+  }
 
-		if (loading) {
-			return null
-			// (
-			// 	<Flex justifyContent='center' alignItems='center' mt='10%'>
-			// 		<CircularProgress
-			// 			className={classes.progress}
-			// 			color='primary'
-			// 			size={60}
-			// 		/>
-			// 	</Flex>
-			// )
-		}
-		return <ComposedComponent {...props} user={props.user} />
-	}
+  const mapStateToProps = createStructuredSelector({
+    user: userSelector
+  })
 
-	function mapStateToProps(state) {
-		return {
-			user: state.user
-		}
-	}
-
-	return connect(mapStateToProps)(Auth)
+  return connect(mapStateToProps)(Auth)
 }

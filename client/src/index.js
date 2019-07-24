@@ -10,30 +10,19 @@ import 'typeface-titillium-web'
 import 'typeface-forum'
 import 'typeface-roboto'
 
+import { PersistGate } from 'redux-persist/integration/react'
 import { Provider } from 'react-redux'
-import { createStore, applyMiddleware } from 'redux'
-import promiseMiddleware from 'redux-promise'
-import ReduxThunk from 'redux-thunk'
-import Reducer from './reducers'
-
-const createStoreWithMiddleware = applyMiddleware(
-	promiseMiddleware,
-	ReduxThunk
-)(createStore)
+import { store, persistor } from './redux/store/store'
 
 ReactDOM.render(
-	<Provider
-		store={createStoreWithMiddleware(
-			Reducer,
-			window.__REDUX_DEVTOOLS_EXTENSION__ &&
-				window.__REDUX_DEVTOOLS_EXTENSION__()
-		)}
-	>
-		<BrowserRouter>
-			<ThemeProvider theme={theme}>
-				<Routes />
-			</ThemeProvider>
-		</BrowserRouter>
-	</Provider>,
-	document.getElementById('root')
+  <Provider store={store}>
+    <BrowserRouter>
+      <ThemeProvider theme={theme}>
+        <PersistGate persistor={persistor}>
+          <Routes />
+        </PersistGate>
+      </ThemeProvider>
+    </BrowserRouter>
+  </Provider>,
+  document.getElementById('root')
 )

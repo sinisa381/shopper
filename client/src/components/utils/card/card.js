@@ -1,6 +1,7 @@
 import React from 'react'
 import { Card } from 'rebass'
-import { SubTitle, Text, ImageDefault } from '../shared'
+import { SubTitle, Text, ImageDefault } from '../../shared'
+import { Flex } from 'rebass'
 import { Paper } from '@material-ui/core'
 
 export default ({ brand, name, price, images }) => {
@@ -8,20 +9,18 @@ export default ({ brand, name, price, images }) => {
     // TODO: description when grid changes
 
     <React.Fragment>
-      <Card width={[256, 320]} mx='auto' p={2}>
+      <Card mx='auto' mt='-5px' p={2}>
         <Paper>
-          <ImageDefault
-            images={images}
-            height={[1 / 3, 2 / 3, 1]}
-            name={name}
-          />
+          <Flex justifyContent='center'>
+            <ImageDefault images={images} name={name} />
+          </Flex>
           <SubTitle textAlign='center' color='blue'>
             {brand.name}
           </SubTitle>
           <Text textAlign='center' fontWeight={600}>
             {name}
           </Text>
-          <Text pb={[2, 3]} textAlign='center' color='green'>
+          <Text pb={[2, 3]} mb='0' textAlign='center' color='green'>
             $ {price}
           </Text>
         </Paper>

@@ -1,35 +1,159 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
+import { createStructuredSelector } from 'reselect'
+import { computedWood, product } from '../../redux/product/product-selector'
+import { makeStyles } from '@material-ui/core/styles'
+import Drawer from './drawer'
 import { useImmer } from 'use-immer'
-import { Title, SubTitle, Text, Spacer } from '../../components/shared'
-import produce from 'immer'
-import Theme from '../../globals/theme'
+import { Spacer } from '../../components/shared'
 import { connect } from 'react-redux'
 import { Box, Card, Flex } from 'rebass'
-import { getBrand, getWood } from '../../actions/product_actions'
+import {
+  getBrand,
+  getWood,
+  getProductsToShop
+} from '../../redux/product/actions'
+import LoadmoreCards from './loadmore-cards'
 import CollapseCheckbox from '../../components/utils/form/collapse_checkbox'
+import CollapseRadio from '../../components/utils/form/collapse_radio'
 
-import CircularProgess from '@material-ui/core/CircularProgress'
 import Container from '@material-ui/core/Container'
 
-import { makeStyles } from '@material-ui/core/styles'
-import Checkbox from '@material-ui/core/Checkbox'
-
-import ListSubheader from '@material-ui/core/ListSubheader'
 import List from '@material-ui/core/List'
-import ListItem from '@material-ui/core/ListItem'
-import ListItemText from '@material-ui/core/ListItemText'
-import ListItemSecondaryAction from '@material-ui/core/ListItemSecondaryAction'
-import Collapse from '@material-ui/core/Collapse'
-import { MdExpandLess, MdExpandMore } from 'react-icons/md'
 
 import {
   staticFrets,
   staticPrice
 } from '../../components/utils/form/fixed_categories'
-import { getProductsToShop } from '../../actions/product_actions'
+
+const Shop = props => {
+  const classes = useStyles()
+  const [state, setState] = useImmer(initialState)
+
+  const handlePrice = value => {
+    const data = staticPrice
+    let array = []
+
+    for (let key in data) {
+      if (data[key]._id === parseInt(value, 10)) {
+        array = data[key].array
+      }
+    }
+    return array
+  }
+
+  const handleFilters = (filters, category) => {
+    if (category === 'price') {
+      let priceValues = handlePrice(filters)
+      setState(draft => {
+        draft.filters[category] = priceValues
+      })
+    }
+    setState(draft => {
+      draft.filters[category] = filters
+    })
+  }
+
+  function generateDataToSubmit(filtersData) {
+    const dataToSubmit = {}
+    for (let key in filtersData) {
+      if (key == 'price') {
+        const id = filtersData[key]
+        let arr = []
+        staticPrice.filter(item => {
+          if (item._id === parseInt(id)) {
+            arr = [...item.array]
+            dataToSubmit[key] = arr
+          }
+        })
+      } else {
+        let arr = []
+        filtersData[key].forEach(item => {
+          arr.push(item)
+          dataToSubmit[key] = arr
+        })
+      }
+    }
+    console.log(dataToSubmit)
+    return dataToSubmit
+  }
+
+  const { brand, wood, frets, price } = state.filters
+  useEffect(() => {
+    let didCancel = false
+    const dataToSubmit = generateDataToSubmit(state.filters)
+
+    if (!didCancel) {
+      props.dispatch(getProductsToShop(state.skip, state.limit, dataToSubmit))
+    }
+    return () => {
+      didCancel = true
+    }
+  }, [brand, wood, frets, price])
+  useEffect(() => {
+    props.dispatch(getBrand())
+    props.dispatch(getWood())
+  }, [])
+  const { brands, woods } = props.product
+  const renderCardGrid = () => {
+    return (
+      <Card pb='2' mb='2' px='3'>
+        <List
+          component='nav'
+          aria-labelledby='nested-list-subheader'
+          className={classes.list}
+        >
+          <CollapseCheckbox
+            formdata={brands}
+            title={'Brands'}
+            init={false}
+            updateFilters={filters => handleFilters(filters, 'brand')}
+          />
+          <CollapseCheckbox
+            formdata={woods}
+            init={false}
+            title={'Woods'}
+            updateFilters={filters => handleFilters(filters, 'wood')}
+          />
+          <CollapseCheckbox
+            formdata={staticFrets}
+            init={true}
+            title={'Frets'}
+            updateFilters={filters => handleFilters(filters, 'frets')}
+          />
+
+          <CollapseRadio
+            formdata={staticPrice}
+            init={true}
+            title={'Price'}
+            updateFilters={filters => handleFilters(filters, 'price')}
+          />
+        </List>
+      </Card>
+    )
+  }
+
+  return (
+    <>
+      <Container>
+        <Spacer />
+        <Drawer render={closeDrawer => renderCardGrid(closeDrawer)}>
+          <Box flex={['100%', '70%']}>
+            <LoadmoreCards
+              grid={state.grid}
+              limit={state.limit}
+              product={props.product.toShop}
+              size={props.product.toShopSize}
+              loadmore={() => console.log('loadmore')}
+            />
+          </Box>
+        </Drawer>
+      </Container>
+    </>
+  )
+}
 
 const useStyles = makeStyles(theme => ({
-  root: {
+  list: {
     width: '100%',
     maxWidth: 360,
     backgroundColor: theme.palette.background.paper
@@ -55,143 +179,9 @@ const initialState = {
   }
 }
 
-const Shop = props => {
-  const classes = useStyles()
-  const [loadingBrand, setLoadingBrand] = useState(false)
-  const [loadingWood, setLoadingWood] = useState(false)
-  const [state, setState] = useImmer(initialState)
-  const { brand, wood, frets, price } = state.filters
-  useEffect(() => {
-    const dataToSubmit = removeCheckedFromFilters(state.filters)
-
-    props.dispatch(getProductsToShop(state.skip, state.limit, dataToSubmit))
-  }, [brand, wood, frets, price, state.skip, state.limit])
-
-  function removeCheckedFromFilters(filtersData) {
-    const dataToSubmit = {}
-    for (let key in filtersData) {
-      if (key === 'price') {
-        let arr = []
-        filtersData[key].forEach(item => {
-          arr.push(item.array)
-          dataToSubmit[key] = arr
-        })
-      } else {
-        let arr = []
-        filtersData[key].forEach(item => {
-          arr.push(item._id)
-          dataToSubmit[key] = arr
-        })
-      }
-    }
-    return dataToSubmit
-  }
-  function handleChange({ event, _id }, type) {
-    setState(draft => {
-      const index = draft[type].findIndex(item => item._id === _id)
-      const data = draft[type]
-      data[index].checked = event.target.checked
-      const sorted = draft[type].filter(item => item.checked === true)
-      draft.filters[type] = sorted
-    })
-  }
-  function computeState(data) {
-    const newData = produce(data, draft => {
-      draft.forEach(item => (item.checked = false))
-    })
-    return newData
-  }
-  useEffect(() => {
-    setState(draft => {
-      draft.price = staticPrice
-    })
-  }, [])
-  useEffect(() => {
-    const Frets = computeState(staticFrets)
-    setState(draft => {
-      draft.frets = Frets
-    })
-    setLoadingBrand(true)
-    setLoadingWood(true)
-    props.dispatch(getBrand()).then(res => {
-      setLoadingBrand(false)
-      const brands = computeState(res.payload.brand)
-      setState(draft => {
-        draft.brand = brands
-      })
-    })
-    props.dispatch(getWood()).then(res => {
-      setLoadingWood(false)
-      const woods = computeState(res.payload.wood)
-      setState(draft => {
-        draft.wood = woods
-      })
-    })
-  }, [])
-  console.log(props.product)
-  return (
-    <>
-      <Container>
-        <Spacer />
-        <Flex flexWrap='wrap'>
-          <Box width={[1, 1 / 4]} bg='blue'>
-            {/* <Flex justifyContent='center'>
-							<CircularProgess />
-						</Flex> */}
-            <Card pb='2' mb='2'>
-              <List
-                component='nav'
-                aria-labelledby='nested-list-subheader'
-                subheader={
-                  <ListSubheader component='div' id='nested-list-subheader'>
-                    Browse Products
-                  </ListSubheader>
-                }
-                className={classes.root}
-              >
-                <CollapseCheckbox
-                  formdata={state.brand}
-                  title={'Brands'}
-                  init={false}
-                  change={element => handleChange(element, 'brand')}
-                />
-                <CollapseCheckbox
-                  formdata={state.wood}
-                  init={false}
-                  title={'Woods'}
-                  change={element => handleChange(element, 'wood')}
-                />
-                <CollapseCheckbox
-                  formdata={state.frets}
-                  init={true}
-                  title={'Frets'}
-                  change={element => handleChange(element, 'frets')}
-                />
-
-                <CollapseCheckbox
-                  formdata={state.price}
-                  init={true}
-                  title={'Price'}
-                  change={element => handleChange(element, 'price')}
-                />
-              </List>
-            </Card>
-          </Box>
-          <div>
-            <Box width={[1, 3 / 4]} bg='red'>
-              wood
-            </Box>
-          </div>
-        </Flex>
-      </Container>
-    </>
-  )
-}
-
-const mapStateToProps = state => {
-  return {
-    product: state.product
-  }
-}
+const mapStateToProps = createStructuredSelector({
+  wood: computedWood,
+  product
+})
 
 export default connect(mapStateToProps)(Shop)

@@ -14,26 +14,23 @@ import Shop from './pages/shop'
 import UserDashboard from './pages/User/user_dashboard'
 
 function Routes() {
-	return (
-		<React.Fragment>
-			<CssBaseline />
-			<Layout>
-				<Switch>
-					<Route
-						path='/user/dashboard'
-						component={Auth(UserDashboard, true)}
-					/>
-					<Route
-						path='/register_login'
-						component={Auth(RegisterLogin, false)}
-					/>
-					<Route path='/register' component={Auth(Register, false)} />
-					<Route path='/shop' component={Auth(Shop, null)} />
-					<Route path='/' exact component={Auth(Home, null)} />
-				</Switch>
-			</Layout>
-		</React.Fragment>
-	)
+  return (
+    <React.Fragment>
+      <CssBaseline />
+      <Layout>
+        <Switch>
+          <Route path='/user/dashboard' component={Auth(UserDashboard, true)} />
+          <Route
+            path='/register_login'
+            component={Auth(RegisterLogin, false)}
+          />
+          <Route path='/register' component={Auth(Register, false)} />
+          <Route path='/shop' component={Auth(Shop, null)} />
+          <Route path='/' exact component={Auth(Home, null)} />
+        </Switch>
+      </Layout>
+    </React.Fragment>
+  )
 }
 
 export default Routes
