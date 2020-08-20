@@ -5,7 +5,7 @@
   "author": "Sinisa Colic <sinisa820@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "bcrypt": "^3.0.6",
+    "bcrypt": "^5.0.0",
     "body-parser": "^1.19.0",
     "cloudinary": "^1.14.0",
     "concurrently": "^4.1.1",
